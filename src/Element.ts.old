@@ -1,0 +1,197 @@
+type All = string | number | boolean | object;
+
+export class Element extends HTMLElement {
+  _key: string = generateKey();
+
+  _style: HTMLStyleElement = getStyleTag();
+  _prop_values: Map<string, All> = new Map();
+
+  props: Map<string, All> = new Map();
+  state: Map<string, All> = new Map();
+
+  constructor() {
+    super();
+  }
+
+  /**
+   *  public methods
+   * 
+  */
+  public key(): string 
+  {
+    return `[data-key="${this._key}"]`;
+  }
+
+  private _getProps() 
+  {
+    for (const [prop_name, type] of Object.entries(this.props)) {
+      const value = this.getAttribute(prop_name);
+
+      // type checking goes here
+      if (value !== null && !value.constructor === type) {
+        throw `Invalid Data passed to Prop "${prop_name}". Expected: "${type}", Got: "${typeof value}"`;
+      }
+
+      Object.assign(this._prop_values, {
+        [prop_name]: value 
+      });
+    }
+
+    // Object.freeze(this.#prop_values);
+  }
+
+  markup = () => { };
+  styles = () => { };
+  listeners = () => { };
+
+  public prop(prop_name: string | null = null) 
+  {
+    if (!prop_name) return this._prop_values;
+
+    if (!this._prop_values.get(prop_name)) {
+      throw `Undeclared Property name: ${prop_name}`;
+    }
+
+    return this._prop_values.get(prop_name);
+  };
+
+  public setState(newState: Object)
+  {
+    Object.assign(this.state, newState);
+    this.#render();
+  }
+
+  public listen(selector: string, event_type: string, callback: any) 
+  {
+    const elem = this.querySelector(`${this.key()} ${selector}`);
+    if (!elem) {
+      throw `HTML Element with selector "${selector}" not found within this custom element's template`;
+    } 
+
+    elem.addEventListener(event_type, callback);
+  };
+
+  // called when element is added to DOM
+  connectedCallback() 
+  {
+    this._getProps();
+    const styleNode = document.createTextNode(this.styles());
+    this._style.appendChild(styleNode);
+    this._render();
+  }
+
+  /**
+   *  private methods
+   * 
+  */
+  private _render()
+  {
+    const doc = new DOMParser().parseFromString(this.markup(), 'text/html');
+    const body = doc.documentElement.querySelector('body > *');
+    
+    if (body) {
+      body.setAttribute('data-key', this._key);
+  
+      this.innerHTML = '';
+      this.appendChild(body);
+      this.listeners();
+    }
+  }
+
+  // called when element is removed from DOM
+  disconnectedCallback() {
+    const styles: HTMLStyleElement | null = document.querySelector('head style');
+    const rule_keys = [];
+    
+    if (styles && styles.sheet !== null) {
+      for (let i = 0; i < styles.sheet.rules.length; i++) {
+        if (styles.sheet.cssRules[i]) {
+          const style_selector: string = styles.sheet.cssRules[i].selectorText;
+
+        }
+  
+        if (style_selector.startsWith(this.key())) {
+          rule_keys.push(i);
+        }
+      }
+  
+      console.log(rule_keys);
+      rule_keys.forEach(key => {
+        styles.sheet.deleteRule(key);
+      });
+    }
+  }
+
+  // attributes (i.e. props) to watch for changes
+  // static get observedAttributes() {
+  //   return ['message'];
+  // }
+
+  // action to perform when observed attributes change
+  // attributeChangedCallback(attribute, oldValue, newValue) {
+  //   this.#getProps();
+  //   console.log('current props ::', this.#prop_values);
+  //   this.#render();
+  // }
+}
+
+/**
+ *  register a custom element with the browser
+ *  so it can be used within the page
+ * 
+*/
+export function Register(elemName: string, elemClass: any) {
+  customElements.define(elemName, elemClass);
+}
+
+
+/**
+ *  util functions private to this module
+ * 
+*/
+function generateKey(): string 
+{
+  return Math.random().toString(36).substring(2,7);
+}
+
+function getHeadTag(): HTMLHeadElement 
+{
+  return document.head || document.getElementsByTagName("head")[0];
+}
+
+function getStyleTag() 
+{
+  const head: HTMLHeadElement = getHeadTag();
+  const existingStyle: HTMLStyleElement | null = head.querySelector('style');
+
+  if (existingStyle) {
+    return existingStyle;
+  }
+  
+  const styleElem = document.createElement("style");
+  head.appendChild(styleElem);
+  return styleElem;
+};
+
+
+/**
+ *  convert tagged template into html element
+ * 
+*/
+function html(strings: Array<string>, ...values: Array<All>): HTMLElement
+{
+  let html: string = '';
+
+  for (let i = 0; i < strings.length; i++) {
+    html += (strings[i]) ? strings[i] : '';
+    html += (values[i]) ? values[i] : '';
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  const element: ChildNode | null = doc.body.firstChild;
+
+  if (!element) throw new Error('Failed to convert String to HTMLElement'); 
+  return <HTMLElement>element;
+}
