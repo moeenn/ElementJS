@@ -44,7 +44,8 @@ class Counter extends Element {
   }
 
   handleClick = () => {
-    this.setState({ count: this.state.count + 1 });
+    const count = this.state.count + 1;
+    this.setState({ count });
   }
 }
 

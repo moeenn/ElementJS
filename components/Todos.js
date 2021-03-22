@@ -3,10 +3,17 @@ import { Element, Register, HTML, CSS } from '../dist/Element.js';
 class Todos extends Element {
   constructor() {
     super();
+
+    this.props = {
+      url: String
+    };
+
     this.state = {
       todos: []
     };
+  }
 
+  mounted() {
     this.getTodos();
     this.addListener('li', 'click', this.handleClick);
   }
@@ -49,7 +56,7 @@ class Todos extends Element {
   }
 
   async getTodos() {
-    const res = await fetch('https://jsonplaceholder.typicode.com/todos');
+    const res = await fetch(this.props.url);
     const todos = await res.json();
     this.setState({ todos });
   }

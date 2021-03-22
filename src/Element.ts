@@ -1,4 +1,4 @@
-type All = string | number | boolean | object;
+type All = string | number | boolean | object | null;
 
 interface Listener {
   selector: string;
@@ -6,8 +6,14 @@ interface Listener {
   callback: any;
 }
 
+interface Props {
+  [key: string]: All;
+}
+
 export abstract class Element extends HTMLElement {
   abstract state: Object;
+  props: Props = {};
+
   _key: string = generateKey();
   _listeners: Array<Listener>;
 
@@ -30,6 +36,32 @@ export abstract class Element extends HTMLElement {
    *
    */
   abstract styles(): HTMLStyleElement;
+
+  /**
+   *  execute when mounting of element if complete
+   *
+   */
+  // mounted = (): void => {};
+  abstract mounted(): void;
+
+  /**
+   *  get props
+   *
+   */
+  public getProps = () => {
+    let result: Props = {};
+
+    for (const [prop, type] of Object.entries(this.props)) {
+      if (prop.constructor !== type) {
+        throw new Error(`Prop '${prop}' value is not of invalid type`);
+      }
+
+      const value: string | null = this.getAttribute(prop);
+      result[prop] = value;
+    }
+
+    Object.assign(this.props, result);
+  };
 
   /**
    *  update element state
@@ -95,6 +127,12 @@ export abstract class Element extends HTMLElement {
    *
    */
   connectedCallback() {
+    this.getProps();
+
+    if (typeof this.mounted === 'function') {
+      this.mounted();
+    }
+    
     this._render();
   }
 
