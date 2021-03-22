@@ -8,11 +8,14 @@ interface Listener {
 
 export abstract class Element extends HTMLElement {
   abstract state: Object;
+  _key: string = generateKey();
   _listeners: Array<Listener>;
 
   constructor() {
     super();
     this._listeners = [];
+
+    this.setAttribute('data-key', this._key);
   }
 
   /**
@@ -36,7 +39,7 @@ export abstract class Element extends HTMLElement {
    */
   addListener(selector: string, eventName: string, callback: any): void {
     this._listeners.push({
-      selector,
+      selector: `[data-key='${this._key}'] ${selector}`,
       eventName,
       callback,
     });
@@ -114,11 +117,20 @@ export function HTML(
     html += values[i] !== null && values[i] !== undefined ? values[i] : "";
   }
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const template: HTMLTemplateElement = document.createElement('template');
+  template.innerHTML = html;
 
-  const element: ChildNode | null = doc.body.firstChild;
+  const element: HTMLElement = <HTMLElement>template.content.firstElementChild;
 
   if (!element) throw new Error("Failed to convert String to HTMLElement");
-  return <HTMLElement>element;
+  element.setAttribute('data-key', generateKey());
+  return element;
+}
+
+/**
+ *  generate a unique key for the current instance of the Element
+ * 
+*/
+function generateKey(): string {
+  return Math.random().toString(36).substring(2,7);
 }
