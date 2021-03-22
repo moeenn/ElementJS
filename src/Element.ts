@@ -15,7 +15,8 @@ export abstract class Element extends HTMLElement {
     super();
     this._listeners = [];
 
-    this.setAttribute('data-key', this._key);
+    // set the unique identifier for this element
+    this.setAttribute("data-key", this._key);
   }
 
   /**
@@ -23,6 +24,12 @@ export abstract class Element extends HTMLElement {
    *
    */
   abstract template(): HTMLElement;
+
+  /**
+   *  let users define element styles
+   *
+   */
+  abstract styles(): HTMLStyleElement;
 
   /**
    *  update element state
@@ -37,7 +44,7 @@ export abstract class Element extends HTMLElement {
    *  register listeners
    *
    */
-  addListener(selector: string, eventName: string, callback: any): void {
+  public addListener(selector: string, eventName: string, callback: any): void {
     this._listeners.push({
       selector: `[data-key='${this._key}'] ${selector}`,
       eventName,
@@ -77,6 +84,10 @@ export abstract class Element extends HTMLElement {
     this.innerHTML = "";
     this.appendChild(element);
     this.activateListeners();
+
+    // register element styles
+    const styles: HTMLStyleElement = this.styles();
+    this.appendChild(styles);
   }
 
   /**
@@ -103,6 +114,24 @@ export function Register(elemName: string, elemClass: any) {
 }
 
 /**
+ *  convert tagged string literal into primitive string
+ *
+ */
+function parseTemplateString(
+  strings: TemplateStringsArray,
+  values: Array<All>
+): string {
+  let result: string = "";
+
+  for (let i = 0; i < strings.length; i++) {
+    result += strings[i] !== null && strings[i] !== undefined ? strings[i] : "";
+    result += values[i] !== null && values[i] !== undefined ? values[i] : "";
+  }
+
+  return result;
+}
+
+/**
  *  convert tagged template into html element
  *
  */
@@ -110,27 +139,35 @@ export function HTML(
   strings: TemplateStringsArray,
   ...values: Array<All>
 ): HTMLElement {
-  let html: string = "";
-
-  for (let i = 0; i < strings.length; i++) {
-    html += strings[i] !== null && strings[i] !== undefined ? strings[i] : "";
-    html += values[i] !== null && values[i] !== undefined ? values[i] : "";
-  }
-
-  const template: HTMLTemplateElement = document.createElement('template');
+  const html: string = parseTemplateString(strings, values);
+  const template: HTMLTemplateElement = document.createElement("template");
   template.innerHTML = html;
 
   const element: HTMLElement = <HTMLElement>template.content.firstElementChild;
-
   if (!element) throw new Error("Failed to convert String to HTMLElement");
-  element.setAttribute('data-key', generateKey());
+
   return element;
 }
 
 /**
+ *  convert tagged template into CSS styles
+ *
+ */
+export function CSS(
+  strings: TemplateStringsArray,
+  ...values: Array<All>
+): HTMLStyleElement {
+  const css: string = parseTemplateString(strings, values);
+
+  const styleElement: HTMLStyleElement = document.createElement("style");
+  styleElement.innerHTML = css;
+  return styleElement;
+}
+
+/**
  *  generate a unique key for the current instance of the Element
- * 
-*/
+ *
+ */
 function generateKey(): string {
-  return Math.random().toString(36).substring(2,7);
+  return Math.random().toString(36).substring(2, 7);
 }
