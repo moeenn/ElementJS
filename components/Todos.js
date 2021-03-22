@@ -62,18 +62,13 @@ class Todos extends Element {
   }
 
   renderList() {
-    let markup = '';
-
-    this.state.todos.forEach(todo => {
-      markup += `
-      <li data-id="${todo.id}">
+    return this.state.todos.reduce((accum, todo) => {
+      return accum + 
+      `<li data-id="${todo.id}">
         ${todo.title}
         <input type="checkbox" ${(todo.completed) ? 'checked' : ''}>
-      </li>
-      `;
-    });
-
-    return markup;
+      </li>`;
+    }, '');
   }
 
   handleClick = (event) => {
