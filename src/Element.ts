@@ -15,11 +15,10 @@ export abstract class Element extends HTMLElement {
   props: Props = {};
 
   _key: string = generateKey();
-  _listeners: Array<Listener>;
+  _listeners: Array<Listener> = [];
 
   constructor() {
     super();
-    this._listeners = [];
 
     // set the unique identifier for this element
     this.setAttribute("data-key", this._key);
@@ -41,14 +40,13 @@ export abstract class Element extends HTMLElement {
    *  execute when mounting of element if complete
    *
    */
-  // mounted = (): void => {};
   abstract mounted(): void;
 
   /**
    *  get props
    *
    */
-  public getProps = () => {
+  public getProps(): void {
     let result: Props = {};
 
     for (const [prop, type] of Object.entries(this.props)) {
@@ -61,7 +59,7 @@ export abstract class Element extends HTMLElement {
     }
 
     Object.assign(this.props, result);
-  };
+  }
 
   /**
    *  update element state
@@ -129,10 +127,10 @@ export abstract class Element extends HTMLElement {
   connectedCallback() {
     this.getProps();
 
-    if (typeof this.mounted === 'function') {
+    if (typeof this.mounted === "function") {
       this.mounted();
     }
-    
+
     this._render();
   }
 
@@ -182,7 +180,11 @@ export function HTML(
   template.innerHTML = html;
 
   const element: HTMLElement = <HTMLElement>template.content.firstElementChild;
+
   if (!element) throw new Error("Failed to convert String to HTMLElement");
+  if (template.content.childElementCount !== 1) {
+    throw new Error("HTML Template must have not have more than one element at root level");
+  }
 
   return element;
 }
