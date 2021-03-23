@@ -1,6 +1,6 @@
-import { Element, Register, HTML, CSS } from '../dist/Element.js';
+import { Element, HTML, CSS } from '../dist/Element.js';
 
-class Counter extends Element {
+export default class Counter extends Element {
   constructor() {
     super();
     this.state = {
@@ -48,5 +48,3 @@ class Counter extends Element {
     this.setState({ count });
   }
 }
-
-Register('f-counter', Counter);

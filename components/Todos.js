@@ -1,6 +1,6 @@
-import { Element, Register, HTML, CSS } from '../dist/Element.js';
+import { Element, HTML, CSS } from '../dist/Element.js';
 
-class Todos extends Element {
+export default class Todos extends Element {
   constructor() {
     super();
 
@@ -84,5 +84,3 @@ class Todos extends Element {
     this.setState({ todos });
   }
 }
-
-Register('f-todos', Todos);
